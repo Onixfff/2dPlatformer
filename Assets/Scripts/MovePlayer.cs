@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -13,29 +14,38 @@ public class MovePlayer : MonoBehaviour
     [SerializeField] private float _jumpForse;
     [SerializeField] private float _jumpTime;
     [SerializeField] private AnimationPlayer _playerAnimator;
+    [SerializeField] private Vector3 _groundCheckOffset;
+    [SerializeField] private float _rayLength = 0.2f;
+    [SerializeField] private LayerMask _layerMask;
 
-    private RaycastHit2D _hit;
-    private float _gravity = 9.8f;
+    private bool _isMoving;
+    private float _gravityScaleStart;
+    private float _gravityScaleJump = 3;
+    private bool _isFlying;
+    private SpriteRenderer _spriteRenderer;
     private bool _isGround;
     private InputPlayer _inputPlayer;
     private Rigidbody2D _rigidbody2D;
-    private Transform _transform;
     private EnumMove _enumMove;
     private bool _jump;
     private float _jumpTimer;
+    private Transform _transform;
 
     private void Awake()
     {
-        _inputPlayer = GetComponent<InputPlayer>();
         _transform = GetComponent<Transform>();
+        _spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        _inputPlayer = GetComponent<InputPlayer>();
         _rigidbody2D = GetComponent<Rigidbody2D>();
         _enumMove = new EnumMove();
+        _gravityScaleStart = _rigidbody2D.gravityScale;
     }
 
     private void FixedUpdate()
     {
         OnMove();
         OnJump();
+        CheckGround();
     }
 
     private void Update()
@@ -44,87 +54,77 @@ public class MovePlayer : MonoBehaviour
         _jump = _inputPlayer.GetJumpInput();
     }
 
-    private void OnMove()
-    {
-        float sumTimeSpeed = _speed * Time.fixedDeltaTime;
-
-        if(_enumMove != EnumMove.Down && _enumMove != EnumMove.Up && _enumMove != EnumMove.Zero)
-            _playerAnimator.OnWalkAnimator(true);
-
-        switch (_enumMove)
-        {
-            case EnumMove.Right:
-                _transform.Translate(Vector2.right * sumTimeSpeed);
-                break;
-            case EnumMove.Left:
-                _transform.Translate(Vector2.left * sumTimeSpeed);
-                break;
-            case EnumMove.Zero:
-                _playerAnimator.OnWalkAnimator(false);
-                break;
-            default:
-                Debug.Log("Ошибка передвижения в методе OnMove");
-                break;
-        }
-    }
-
-    public void OnMovePhisics()
+    public void OnMove()
     {
         switch (_enumMove)
         {
             case EnumMove.Right:
-                _rigidbody2D.velocity = new Vector2(Vector2.right.x * _speed * Time.fixedDeltaTime, _rigidbody2D.velocity.y);
+                _rigidbody2D.velocity = new Vector2(Vector2.right.x * _speed * Time.deltaTime, _rigidbody2D.velocity.y);
+                _spriteRenderer.flipX = false;
+                _isMoving = true;
                 break;
             case EnumMove.Left:
-                _rigidbody2D.velocity = new Vector2(Vector2.left.x * _speed * Time.fixedDeltaTime, _rigidbody2D.velocity.y);
+                _rigidbody2D.velocity = new Vector2(Vector2.left.x * _speed * Time.deltaTime, _rigidbody2D.velocity.y);
+                _spriteRenderer.flipX = true;
+                _isMoving = true;
                 break;
             case EnumMove.Zero:
-                
+                _isMoving = false;
                 break;
             default:
                 Debug.Log("Ошибка передвижения в методе OnMovePhisics");
                 break;
         }
+
+        _playerAnimator.isMoving = _isMoving;
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
+    private void CheckGround()
     {
-        if(collision.gameObject.CompareTag("Ground"))
+        Ray2D ray = new Ray2D(_transform.position, Vector2.down);
+        Debug.DrawRay(ray.origin, ray.direction * _rayLength);
+
+        if(Physics2D.Raycast(ray.origin, ray.direction, _rayLength, _layerMask))
         {
             _isGround = true;
+            _isFlying = false;
+            _rigidbody2D.gravityScale = _gravityScaleStart;
         }
-    }
-
-    private void OnCollisionExit2D(Collision2D collision)
-    {
-        if (collision.gameObject.CompareTag("Ground"))
+        else
         {
             _isGround = false;
+            _isFlying = true;
+            _rigidbody2D.gravityScale = _gravityScaleJump;
         }
+
+        _playerAnimator.isFlying = _isFlying;
     }
 
     private void OnJump()
     {
-            Debug.Log(_jump);
         if (_jump == false)
             return;
+
+        CheckGround();
 
         if (_jumpTimer <=0 && _isGround == true)
         {
             _jumpTimer = _jumpTime;
-            _isGround = false;
+            _playerAnimator.OnJumpAnimator(true);
         }
 
         if (_jumpTimer > 0)
         {
-            _jumpTimer -= Time.deltaTime;
-            _rigidbody2D.AddForce(Vector2.up * _jumpForse * Time.fixedDeltaTime);
+            //_rigidbody2D.velocity = Vector2.zero;
+            _jumpTimer -= Time.fixedDeltaTime;
+            _rigidbody2D.velocity = new Vector2(_rigidbody2D.velocity.x, Vector2.up.y * _jumpForse * Time.fixedDeltaTime);
+            //_rigidbody2D.AddForce(Vector2.up * _jumpForse * Time.fixedDeltaTime, ForceMode2D.Impulse);
             Debug.Log(_jumpTimer);
         }
         else
         {
-            _isGround = true;
             _inputPlayer.ResetJumpInput();
+            _playerAnimator.OnJumpAnimator(false);
         }
     }
 }

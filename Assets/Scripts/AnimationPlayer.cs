@@ -7,14 +7,18 @@ public class AnimationPlayer : MonoBehaviour
 {
     private Animator _animator;
 
+    public bool isMoving { private get; set; }
+    public bool isFlying { private get; set; }
+
     private void Awake()
     {
         _animator = GetComponent<Animator>();
     }
 
-    public void OnWalkAnimator(bool speed)
+    private void Update()
     {
-        _animator.SetBool("Run", speed);
+        _animator.SetBool("isMoving", isMoving);
+        _animator.SetBool("isFlying", isFlying);
     }
 
     public void OnJumpAnimator(bool jump)

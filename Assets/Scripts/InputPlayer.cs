@@ -14,9 +14,6 @@ public class InputPlayer : MonoBehaviour
 
     private void Awake()
     {
-        int[] r = new int[4];
-        int[] e = new int[r.Count()];
-        for(int i = e.Count() - 1; i>= 0; i--)  
         _enumMove = new EnumMove();
         _controls = new PlayerController();
         _controls.Player.Enable();

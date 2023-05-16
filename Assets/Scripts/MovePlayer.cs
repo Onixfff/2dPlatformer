@@ -44,8 +44,8 @@ public class MovePlayer : MonoBehaviour
     private void FixedUpdate()
     {
         OnMove();
-        OnJump();
         CheckGround();
+        OnJump();
     }
 
     private void Update()
@@ -105,8 +105,6 @@ public class MovePlayer : MonoBehaviour
         if (_jump == false)
             return;
 
-        CheckGround();
-
         if (_jumpTimer <=0 && _isGround == true)
         {
             _jumpTimer = _jumpTime;
@@ -115,10 +113,8 @@ public class MovePlayer : MonoBehaviour
 
         if (_jumpTimer > 0)
         {
-            //_rigidbody2D.velocity = Vector2.zero;
             _jumpTimer -= Time.fixedDeltaTime;
             _rigidbody2D.velocity = new Vector2(_rigidbody2D.velocity.x, Vector2.up.y * _jumpForse * Time.fixedDeltaTime);
-            //_rigidbody2D.AddForce(Vector2.up * _jumpForse * Time.fixedDeltaTime, ForceMode2D.Impulse);
             Debug.Log(_jumpTimer);
         }
         else

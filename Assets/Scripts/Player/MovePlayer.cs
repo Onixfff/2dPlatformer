@@ -5,6 +5,7 @@ using Unity.VisualScripting;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 [RequireComponent(typeof(InputPlayer))]
 [RequireComponent(typeof(Transform))]
@@ -26,7 +27,7 @@ public class MovePlayer : MonoBehaviour
     private bool _isGround;
     private InputPlayer _inputPlayer;
     private Rigidbody2D _rigidbody2D;
-    private EnumMove _enumMove;
+    protected EnumMove _enumMove;
     private bool _jump;
     private float _jumpTimer;
     private Transform _transform;
@@ -43,8 +44,8 @@ public class MovePlayer : MonoBehaviour
 
     private void FixedUpdate()
     {
-        OnMove();
         CheckGround();
+        OnMove();
         OnJump();
     }
 
@@ -72,7 +73,7 @@ public class MovePlayer : MonoBehaviour
                 _isMoving = false;
                 break;
             default:
-                Debug.Log("Ошибка передвижения в методе OnMovePhisics");
+                Debug.Log("Ошибка передвижения в методе OnMove");
                 break;
         }
 
@@ -115,12 +116,15 @@ public class MovePlayer : MonoBehaviour
         {
             _jumpTimer -= Time.fixedDeltaTime;
             _rigidbody2D.velocity = new Vector2(_rigidbody2D.velocity.x, Vector2.up.y * _jumpForse * Time.fixedDeltaTime);
-            Debug.Log(_jumpTimer);
         }
         else
         {
             _inputPlayer.ResetJumpInput();
             _playerAnimator.OnJumpAnimator(false);
         }
+    }
+    
+    private void OnCollisionStay2D(Collision2D collision)
+    {
     }
 }
